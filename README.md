@@ -1,69 +1,84 @@
 # PKM AI
 
-Personal Knowledge Management con AI per raccogliere, indicizzare e interrogare documenti personali con intelligenza artificiale.
+PKM AI is my personal knowledge hub powered by AI. Drop in PDFs, notes, or markdown files, and it indexes everything so future-you (or an LLM teammate) can instantly recall the good parts.
 
-## Stato Avanzamento
-- [x] Fase 1 – Setup iniziale (struttura repo, dipendenze, README)
-- [x] Fase 2 – Document ingestion (`load_document`, `split_text`, test pytest)
-- [ ] Fase 3 – Embedding & Vector DB
-- [ ] Fase 4 – AI Chat
-- [ ] Fase 5 – Dashboard Streamlit
-- [ ] Fase 6 – Extra features
+## Where Things Stand
+- ✅ Phase 1 – Project scaffolding (src/tests/docs, dependencies, tooling)
+- ✅ Phase 2 – Document ingestion (`load_document`, `split_text`, pytest coverage)
+- ✅ Phase 3 – Embeddings, vector stores, and metadata pipeline (SentenceTransformers, FAISS/Chroma wrappers, persistence tests)
+- ☐ Phase 4 – AI chat layer
+- ☐ Phase 5 – Streamlit dashboard
+- ☐ Phase 6 – Bonus polish (exports, highlights, auth)
 
-## Obiettivi
-- Caricare documenti (PDF, TXT, MD) e organizzarli in un archivio consultabile.
-- Estrarre informazioni chiave con modelli NLP.
-- Creare embedding vettoriali per la ricerca semantica.
-- Fornire una chat AI che risponde basandosi sui documenti caricati.
-- Visualizzare il tutto tramite una dashboard Streamlit.
-- Esportare note sintetiche in PDF/Markdown.
+## What PKM AI Tries To Do
+- Collect PDFs, TXT, and Markdown into a searchable knowledge base.
+- Extract key chunks with NLP-friendly splits.
+- Encode everything into vector space for semantic lookup.
+- Answer questions using only your own documents.
+- Surface everything in an approachable Streamlit dashboard.
+- Let you export concise summaries when you’re done.
 
-## Setup Ambiente
-1. Creare un virtual environment Python (>=3.10) e attivarlo.
-2. Installare le dipendenze core: `pip install -r requirements.txt`.
-3. (Opzionale) Installare il pacchetto in editable mode per avere `pkm_ai` disponibile ovunque: `pip install -e .`.
+## Getting Started
+1. Spin up a Python ≥3.10 virtual environment and activate it.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. (Optional, recommended) install the package locally so imports just work: `pip install -e .`.
 
-## Test
-- Eseguire l'intera suite: `pytest`
+## Running Tests
+- Full suite: `pytest`
 
-## Document Ingestion
-- `pkm_ai.ingestion.load_document(path)` gestisce PDF, TXT e MD, restituendo contenuto e metadati (percorso, estensione, numero caratteri).
-- `pkm_ai.ingestion.split_text(text, chunk_size, overlap)` suddivide il testo in chunk sovrapposti per alimentare pipeline NLP successive.
-- La copertura è validata con `tests/test_ingestion.py`, incluse le condizioni di errore e i parametri non validi.
+## How the Pieces Fit
+### Ingestion
+- `pkm_ai.ingestion.load_document(path)` handles PDF/TXT/MD and returns raw text plus metadata (path, extension, char count).
+- `pkm_ai.ingestion.split_text(text, chunk_size, overlap)` slices clean, overlapping context windows.
+- Coverage lives in `tests/test_ingestion.py`.
 
-## Roadmap Dettagliata
-### Fase 1 – Setup ✅
-- Struttura base del progetto (`src/`, `tests/`, `docs/`).
-- `requirements.txt` con dipendenze principali.
-- `pyproject.toml` per configurare il package e integrare strumenti (pytest, IDE).
+### Embeddings & Vector Search
+- `pkm_ai.create_embeddings(texts, encoder=None)` defaults to SentenceTransformers but accepts any encoder.
+- `pkm_ai.build_vector_store("faiss", dim=...)` spins up a FAISS index; `build_vector_store("chroma", ...)` opens a Chroma collection.
+- Custom wrappers (`FaissVectorStore`, `ChromaVectorStore`) keep metadata alongside similarity scores.
+- Validated in `tests/test_embeddings.py`.
 
-### Fase 2 – Document Ingestion ✅
-- Funzioni `load_document()` e `split_text()` pubblicate nel package.
-- Gestione robusta degli errori (file mancanti, formati non supportati, PDF senza dipendenze).
-- Test unitari per tutti i percorsi principali.
+### Metadata Persistence
+- `pkm_ai.storage.SQLiteMetadataStore` is the durable option with constraints, indexes, and upserts.
+- `pkm_ai.storage.JSONMetadataStore` is a lightweight alternative for quick experiments.
+- Each exposes `upsert_document`, `replace_document_chunks`, `list_document_chunks` so you can swap backends without rewiring.
+- See `tests/test_storage.py` for scenarios.
 
-### Fase 3 – Embedding & Vector DB
-- Funzione `create_embeddings()` con SentenceTransformers.
-- Integrazione con FAISS o ChromaDB per la persistenza.
-- Ricerca semantica su input utente.
+### Ingestion Pipeline
+- `pkm_ai.pipeline.DocumentIngestionPipeline` threads ingestion, metadata, embeddings, and vector indexing together.
+- Returns `IngestionResult` with the stored document plus the chunk records that made it into the vector DB.
+- Exercised end-to-end in `tests/test_pipeline.py` via a stub embedder/vector store.
 
-### Fase 4 – AI Chat
-- Integrazione con un modello LLM (OpenAI API, Ollama locale, HuggingFace).
-- Prompt engineering per garantire risposte basate sui documenti.
-- Test di coerenza delle risposte.
+### Tiny Quickstart
+```python
+from pkm_ai import DocumentIngestionPipeline, SQLiteMetadataStore, build_vector_store
 
-### Fase 5 – Dashboard Streamlit
-- Upload file con ingestione automatica.
-- Lista documenti + anteprima contenuti.
-- Barra di ricerca semantica.
-- Chat AI interattiva.
+metadata_store = SQLiteMetadataStore("./data/metadata.db")
+vector_store = build_vector_store("faiss", dim=384)  # match the embedding model dimension
 
-### Fase 6 – Extra Features
-- Esportazione di note sintetiche.
-- Evidenziazione dei passaggi di origine nelle risposte.
-- Supporto multi-utente/autenticazione (opzionale).
+pipeline = DocumentIngestionPipeline(metadata_store, vector_store)
+result = pipeline.ingest_file("./docs/meeting-notes.md")
+print(result.document)
+print(len(result.chunks), "chunks indexed")
+```
 
-## Struttura Cartelle
+## Roadmap
+### Phase 4 – AI Chat (next up)
+- Plug in an LLM (OpenAI API, Ollama, or HuggingFace).
+- Shape retrieval-augmented prompts anchored to stored chunks.
+- Add regression tests for answer grounding and hallucination checks.
+
+### Phase 5 – Streamlit Dashboard
+- Drag-and-drop uploads with automatic ingestion.
+- Document browser with previews and semantic search.
+- Conversational panel powered by the retrieval+LLM stack.
+
+### Phase 6 – Nice-to-haves
+- Export polished summaries (PDF/Markdown).
+- Highlight the source snippets in each answer.
+- Optional user accounts / auth if sharing the workspace.
+
+## Repo Layout
 ```
 PKM AI/
 ├── docs/
@@ -72,14 +87,22 @@ PKM AI/
 ├── src/
 │   └── pkm_ai/
 │       ├── __init__.py
-│       └── ingestion.py
+│       ├── embeddings.py
+│       ├── ingestion.py
+│       ├── pipeline.py
+│       └── storage.py
 ├── tests/
 │   ├── conftest.py
-│   └── test_ingestion.py
-└── pytest.ini
+│   ├── test_embeddings.py
+│   ├── test_ingestion.py
+│   ├── test_pipeline.py
+│   └── test_storage.py
+├── pytest.ini
+└── .vscode/
+    └── settings.json
 ```
 
-## Prossimi passi
-1. Definire lo schema per i metadati (SQLite/JSON) e collegarlo al loader.
-2. Implementare la pipeline di embedding con FAISS/ChromaDB (Fase 3).
-3. Progettare test per la persistenza e la ricerca semantica.
+## What’s Next
+1. Flesh out retrieval queries so the LLM receives curated context for every question.
+2. Wire in the preferred LLM provider and expose a FastAPI endpoint for chat.
+3. Layer on the Streamlit experience so the workflow feels as friendly as the README.
