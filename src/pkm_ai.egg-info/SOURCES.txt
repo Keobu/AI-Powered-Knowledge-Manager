@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+src/pkm_ai/__init__.py
+src/pkm_ai/ingestion.py
+src/pkm_ai.egg-info/PKG-INFO
+src/pkm_ai.egg-info/SOURCES.txt
+src/pkm_ai.egg-info/dependency_links.txt
+src/pkm_ai.egg-info/top_level.txt
+tests/test_ingestion.py
