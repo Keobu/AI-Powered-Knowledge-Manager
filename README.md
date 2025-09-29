@@ -1,0 +1,59 @@
+# PKM AI
+
+Personal Knowledge Management con AI per raccogliere, indicizzare e interrogare documenti personali con intelligenza artificiale.
+
+## Obiettivi
+- Caricare documenti (PDF, TXT, MD) e organizzarli in un archivio consultabile.
+- Estrarre informazioni chiave con modelli NLP.
+- Creare embedding vettoriali per la ricerca semantica.
+- Fornire una chat AI che risponde basandosi sui documenti caricati.
+- Visualizzare il tutto tramite una dashboard Streamlit.
+- Esportare note sintetiche in PDF/Markdown.
+
+## Roadmap
+### Fase 1 – Setup
+- Struttura base del progetto (`src/`, `tests/`, `docs/`).
+- `requirements.txt` con dipendenze principali.
+- README con obiettivi e roadmap.
+
+### Fase 2 – Document Ingestion
+- Funzione `load_document()` per PDF/TXT/MD.
+- Funzione `split_text()` per suddividere in chunk.
+- Test unitari per il caricamento file.
+
+### Fase 3 – Embedding & Vector DB
+- Funzione `create_embeddings()` con SentenceTransformers.
+- Integrazione con FAISS o ChromaDB per la persistenza.
+- Ricerca semantica su input utente.
+
+### Fase 4 – AI Chat
+- Integrazione con un modello LLM (OpenAI API, Ollama locale, HuggingFace).
+- Prompt engineering per garantire risposte basate sui documenti.
+- Test di coerenza delle risposte.
+
+### Fase 5 – Dashboard Streamlit
+- Upload file con ingestione automatica.
+- Lista documenti + anteprima contenuti.
+- Barra di ricerca semantica.
+- Chat AI interattiva.
+
+### Fase 6 – Extra Features
+- Esportazione di note sintetiche.
+- Evidenziazione dei passaggi di origine nelle risposte.
+- Supporto multi-utente/autenticazione (opzionale).
+
+## Struttura Cartelle
+```
+PKM AI/
+├── docs/
+├── src/
+│   └── __init__.py
+├── tests/
+└── requirements.txt
+```
+
+## Prossimi passi
+1. Definire lo schema metadati (SQLite/JSON) per tracciare documenti e chunk.
+2. Implementare l'ingestione base con parsing dei formati supportati.
+3. Preparare test automatici con pytest per le funzioni core.
+# AI-Powered-Knowledge-Manager
