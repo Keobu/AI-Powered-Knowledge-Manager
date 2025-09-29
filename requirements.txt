@@ -1,0 +1,9 @@
+streamlit
+fastapi
+sentence-transformers
+transformers
+faiss-cpu
+chromadb
+pytest
+pypdf
+python-dotenv
