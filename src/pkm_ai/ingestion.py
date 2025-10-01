@@ -37,17 +37,17 @@ def _load_text_file(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:  # pragma: no cover - unlikely in tests
-        raise DocumentLoaderError(f"Impossibile decodificare il file di testo: {path}") from exc
+        raise DocumentLoaderError(f"Unable to decode text file: {path}") from exc
 
 
 def _load_pdf_file(path: Path) -> str:
     if PdfReader is None:
-        raise DocumentLoaderError("Supporto PDF non disponibile: installa 'pypdf'.")
+        raise DocumentLoaderError("PDF support is unavailable: install 'pypdf'.")
 
     try:
         reader = PdfReader(str(path))
     except Exception as exc:  # pragma: no cover - pypdf already validates input
-        raise DocumentLoaderError(f"Impossibile aprire il PDF: {path}") from exc
+        raise DocumentLoaderError(f"Unable to open PDF: {path}") from exc
 
     contents: List[str] = []
     for page in reader.pages:
@@ -61,12 +61,12 @@ def load_document(path: Path | str) -> Document:
 
     file_path = Path(path).expanduser().resolve()
     if not file_path.exists():
-        raise DocumentLoaderError(f"File non trovato: {file_path}")
+        raise DocumentLoaderError(f"File not found: {file_path}")
 
     extension = file_path.suffix.lower()
     if extension not in SUPPORTED_EXTENSIONS:
         raise DocumentLoaderError(
-            f"Formato non supportato: {extension}. Formati supportati: {sorted(SUPPORTED_EXTENSIONS)}"
+            f"Unsupported file type: {extension}. Supported formats: {sorted(SUPPORTED_EXTENSIONS)}"
         )
 
     if extension == ".pdf":
@@ -93,11 +93,11 @@ def split_text(
     """Split raw text into overlapping chunks."""
 
     if chunk_size <= 0:
-        raise ValueError("chunk_size deve essere positivo")
+        raise ValueError("chunk_size must be positive")
     if overlap < 0:
-        raise ValueError("overlap non può essere negativo")
+        raise ValueError("overlap cannot be negative")
     if overlap >= chunk_size:
-        raise ValueError("overlap deve essere inferiore a chunk_size")
+        raise ValueError("overlap must be smaller than chunk_size")
 
     normalized = text.strip()
     if not normalized:
@@ -112,7 +112,7 @@ def split_text(
         chunks.append(chunk)
         if end >= text_length:
             break
-        start = end - overlap  # reintroduce parte del testo per il contesto
+        start = end - overlap  # reintroduce part of the text to preserve context
     return chunks
 
 

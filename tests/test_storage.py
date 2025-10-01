@@ -25,14 +25,19 @@ def test_sqlite_metadata_store_upsert_and_replace(tmp_path):
     stored_chunks = store.list_document_chunks(doc.id)
     assert [c.text for c in stored_chunks] == ["chunk-1", "chunk-2"]
 
-    # Replace with a single chunk and ensure the old ones are gone
+    fetched = store.get_chunk(chunk_records[0].id)
+    assert fetched is not None
+    assert fetched.text == "chunk-1"
+
     new_records = store.replace_document_chunks(doc.id, [ChunkInput(text="replaced", position=0)])
     assert len(new_records) == 1
 
     stored_chunks = store.list_document_chunks(doc.id)
     assert [c.text for c in stored_chunks] == ["replaced"]
 
-    # Re-upsert same path should reuse document id
+    missing = store.get_chunk("does-not-exist")
+    assert missing is None
+
     updated_doc = store.upsert_document(path="/tmp/doc.txt", extension=".txt", num_chars=100)
     assert updated_doc.id == doc.id
     assert updated_doc.num_chars == 100
@@ -55,10 +60,15 @@ def test_json_metadata_store_replace(tmp_path):
     listed = store.list_document_chunks(doc.id)
     assert [chunk.text for chunk in listed] == ["chunk-b", "chunk-a"]
 
+    fetched = store.get_chunk(records[0].id)
+    assert fetched is not None
+    assert fetched.document_id == doc.id
+
     store.replace_document_chunks(doc.id, [])
     assert store.list_document_chunks(doc.id) == []
 
-    # Re-upsert updates metadata but keeps same document id
+    assert store.get_chunk(records[0].id) is None
+
     updated_doc = store.upsert_document(path="/tmp/doc.md", extension=".md", num_chars=25)
     assert updated_doc.id == doc.id
     assert updated_doc.num_chars == 25

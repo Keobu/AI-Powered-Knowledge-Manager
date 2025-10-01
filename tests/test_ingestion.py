@@ -31,7 +31,7 @@ def test_load_document_pdf(monkeypatch, tmp_path):
     file_path.write_bytes(b"%PDF-1.4 test content")
 
     if PdfReader is None:
-        pytest.skip("pypdf non installato")
+        pytest.skip("pypdf not installed")
 
     class FakePage:
         def __init__(self, text):

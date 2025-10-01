@@ -6,7 +6,7 @@ import json
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 from uuid import uuid4
 
 
@@ -50,6 +50,9 @@ class BaseMetadataStore:
         raise NotImplementedError
 
     def list_document_chunks(self, document_id: str) -> List[ChunkRecord]:
+        raise NotImplementedError
+
+    def get_chunk(self, chunk_id: str) -> Optional[ChunkRecord]:
         raise NotImplementedError
 
 
@@ -161,6 +164,22 @@ class SQLiteMetadataStore(BaseMetadataStore):
             for row in rows
         ]
 
+    def get_chunk(self, chunk_id: str) -> Optional[ChunkRecord]:
+        cur = self._conn.cursor()
+        cur.execute(
+            "SELECT id, document_id, position, text FROM chunks WHERE id = ?",
+            (chunk_id,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            return None
+        return ChunkRecord(
+            id=row["id"],
+            document_id=row["document_id"],
+            position=row["position"],
+            text=row["text"],
+        )
+
     def close(self) -> None:
         self._conn.close()
 
@@ -211,7 +230,6 @@ class JSONMetadataStore(BaseMetadataStore):
         data = self._load()
         chunks_data: dict = data.setdefault("chunks", {})
 
-        # Remove previous chunks for the document
         to_delete = [chunk_id for chunk_id, chunk in chunks_data.items() if chunk["document_id"] == document_id]
         for chunk_id in to_delete:
             del chunks_data[chunk_id]
@@ -254,6 +272,18 @@ class JSONMetadataStore(BaseMetadataStore):
             )
             for chunk_id, chunk in sorted_chunks
         ]
+
+    def get_chunk(self, chunk_id: str) -> Optional[ChunkRecord]:
+        data = self._load()
+        chunk = data.get("chunks", {}).get(chunk_id)
+        if chunk is None:
+            return None
+        return ChunkRecord(
+            id=chunk_id,
+            document_id=chunk["document_id"],
+            position=chunk["position"],
+            text=chunk["text"],
+        )
 
 
 __all__ = [

@@ -1,5 +1,6 @@
 """PKM AI core package."""
 
+from .chat import ChatEngine, ChatError, ChatResponse, RetrievedChunk
 from .embeddings import (
     BaseVectorStore,
     ChromaVectorStore,
@@ -44,4 +45,8 @@ __all__ = [
     "ChunkInput",
     "DocumentIngestionPipeline",
     "IngestionResult",
+    "ChatEngine",
+    "ChatError",
+    "ChatResponse",
+    "RetrievedChunk",
 ]

@@ -42,18 +42,18 @@ def create_embeddings(
     """Return embeddings for input texts using SentenceTransformers or a custom encoder."""
 
     if not texts:
-        raise ValueError("La lista di testi è vuota")
+        raise ValueError("The text list is empty")
 
     if encoder is None:
         if SentenceTransformer is None:
-            raise EmbeddingError("SentenceTransformers non disponibile. Installa 'sentence-transformers'.")
+            raise EmbeddingError("SentenceTransformers is not available. Install 'sentence-transformers'.")
         encoder_model = SentenceTransformer(model_name)
         embeddings = encoder_model.encode(list(texts), convert_to_numpy=True).tolist()
     else:
         embeddings = [list(vector) for vector in encoder(texts)]
 
     if not embeddings:
-        raise EmbeddingError("Nessun embedding generato")
+        raise EmbeddingError("No embeddings were generated")
 
     return embeddings
 
@@ -88,24 +88,24 @@ class FaissVectorStore(BaseVectorStore):
 
     def __init__(self, dim: int, *, metric: Literal["l2", "ip"] = "ip") -> None:
         if faiss is None:
-            raise VectorStoreError("FAISS non è disponibile. Installa 'faiss-cpu'.")
+            raise VectorStoreError("FAISS is not available. Install 'faiss-cpu'.")
 
         if metric == "ip":
             self._index = faiss.IndexFlatIP(dim)
         elif metric == "l2":
             self._index = faiss.IndexFlatL2(dim)
         else:
-            raise ValueError("Metric must be 'ip' o 'l2'")
+            raise ValueError("Metric must be 'ip' or 'l2'")
 
         self._metadata: List[dict[str, Any]] = []
 
     def add(self, embeddings: Sequence[Sequence[float]], metadatas: Sequence[dict[str, Any]]) -> None:
         if len(embeddings) != len(metadatas):
-            raise ValueError("Numero di embedding e metadati deve coincidere")
+            raise ValueError("Number of embeddings and metadata entries must match")
 
         vectors = np.asarray(embeddings, dtype="float32")
         if vectors.ndim != 2:
-            raise ValueError("Embedding devono avere shape (n, dim)")
+            raise ValueError("Embeddings must have shape (n, dim)")
 
         self._index.add(vectors)
         self._metadata.extend(dict(meta) for meta in metadatas)
@@ -142,15 +142,15 @@ class ChromaVectorStore(BaseVectorStore):
     ) -> None:
         if client is None:
             if chromadb is None:
-                raise VectorStoreError("ChromaDB non è disponibile. Installa 'chromadb'.")
+                raise VectorStoreError("ChromaDB is not available. Install 'chromadb'.")
             settings = ChromaSettings(anonymized_telemetry=False) if ChromaSettings else None
             client = chromadb.Client(settings)
 
         if embedding_functions is None:
-            raise VectorStoreError("Funzioni embedding di Chroma non disponibili.")
+            raise VectorStoreError("Chroma embedding functions are not available.")
 
         if SentenceTransformer is None:
-            raise VectorStoreError("SentenceTransformers richiesto da ChromaVectorStore.")
+            raise VectorStoreError("SentenceTransformers is required by ChromaVectorStore.")
 
         model = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=model_name)
 
@@ -159,7 +159,7 @@ class ChromaVectorStore(BaseVectorStore):
 
     def add(self, embeddings: Sequence[Sequence[float]], metadatas: Sequence[dict[str, Any]]) -> None:
         if len(embeddings) != len(metadatas):
-            raise ValueError("Numero di embedding e metadati deve coincidere")
+            raise ValueError("Number of embeddings and metadata entries must match")
 
         ids = [f"doc-{self._id_counter + i}" for i in range(len(embeddings))]
         self._id_counter += len(ids)
@@ -190,12 +190,12 @@ def build_vector_store(
 
     if backend == "faiss":
         if dim is None:
-            raise ValueError("Per FAISS è necessario specificare 'dim'")
+            raise ValueError("FAISS backend requires the 'dim' parameter")
         return FaissVectorStore(dim=dim, metric=metric)
     if backend == "chroma":
         return ChromaVectorStore(collection_name=collection_name, client=client, model_name=model_name)
 
-    raise ValueError("Backend non supportato")
+    raise ValueError("Unsupported backend")
 
 
 __all__ = [

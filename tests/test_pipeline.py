@@ -42,10 +42,10 @@ def test_pipeline_ingests_document(tmp_path):
     embeddings, metadatas = vector_store.calls[0]
     assert len(embeddings) == len(result.chunks)
     assert metadatas[0]["document_id"] == result.document.id
+    assert metadatas[0]["text"] == result.chunks[0].text
 
     initial_chunk_texts = [chunk.text for chunk in result.chunks]
 
-    # Re-ingest to ensure chunks are replaced
     document_path.write_text("updated content for document", encoding="utf-8")
     second_result = pipeline.ingest_file(str(document_path), chunk_size=7, overlap=0)
 

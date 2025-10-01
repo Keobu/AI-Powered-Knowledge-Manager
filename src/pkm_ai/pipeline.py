@@ -65,6 +65,7 @@ class DocumentIngestionPipeline:
                     "document_id": chunk.document_id,
                     "position": chunk.position,
                     "path": document_record.path,
+                    "text": chunk.text,
                 }
                 for chunk in chunk_records
             ]
