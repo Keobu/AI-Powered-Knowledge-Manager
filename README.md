@@ -8,7 +8,7 @@ PKM AI is my personal knowledge hub powered by AI. Drop in PDFs, notes, or markd
 - ✅ Phase 3 – Embeddings, vector stores, and metadata pipeline (SentenceTransformers, FAISS/Chroma wrappers, persistence tests)
 - ✅ Phase 4 – Retrieval-augmented chat (LLM hooks, prompts, coherence tests)
 - ✅ Phase 5 – Streamlit dashboard (upload/ingest, document list, semantic search, chat pane)
-- ☐ Phase 6 – Bonus polish (exports, highlights, auth)
+- ✅ Phase 6 – Export & highlights (Markdown/PDF export, JSON context, snippet highlighting hooks)
 
 ## What PKM AI Tries To Do
 - Collect PDFs, TXT, and Markdown into a searchable knowledge base.
@@ -68,6 +68,11 @@ By default the app stores SQLite metadata under `./data/metadata.db`. Override v
 - Main content splits into document list (preview first chunks), semantic search results, and a chat transcript with expandable context snippets.
 - Under the hood the dashboard shares a session-level `AppState` (`src/pkm_ai/app_state.py`) so uploads, searches, and chats stay in sync. Tested in `tests/test_app_state.py`.
 
+### Export & Highlights
+- `pkm_ai.export.export_summary_to_markdown` and `export_summary_to_pdf` generate human-readable summaries with highlighted snippets; JSON exports preserve answer + context for downstream tooling (`src/pkm_ai/export.py`).
+- PDF export is optional—install `reportlab` to enable it. Markdown/JSON work out of the box.
+- Tests (`tests/test_export.py`) make sure Markdown/JSON flows stay stable.
+
 ### Tiny Quickstart
 ```python
 from pkm_ai import (
@@ -90,14 +95,15 @@ chat = ChatEngine(
 
 state = AppState(metadata_store=metadata_store, ingestion_pipeline=pipeline, chat_engine=chat)
 state.ingest_file("./docs/meeting-notes.md")
-print(state.chat("What were the action items?").answer)
+response = state.chat("What were the action items?")
+print(response.answer)
+print(export_summary_to_markdown(response)[:200])
 ```
 
 ## Roadmap
-### Phase 6 – Nice-to-haves
-- Export polished summaries (PDF/Markdown).
-- Highlight the source snippets in each answer.
-- Optional user accounts / auth if sharing the workspace.
+- Hook an actual LLM backend into the Streamlit chat (OpenAI, Ollama, HF) and expose FastAPI endpoints.
+- Build export/highlighting features into the UI (currently CLI helpers) and add PDF support once `reportlab` is available in production.
+- Add authentication if the PKM workspace needs to be shared.
 
 ## Repo Layout
 ```
@@ -111,6 +117,7 @@ PKM AI/
 │       ├── app_state.py
 │       ├── chat.py
 │       ├── embeddings.py
+│       ├── export.py
 │       ├── ingestion.py
 │       ├── pipeline.py
 │       ├── storage.py
@@ -120,6 +127,7 @@ PKM AI/
 │   ├── test_app_state.py
 │   ├── test_chat.py
 │   ├── test_embeddings.py
+│   ├── test_export.py
 │   ├── test_ingestion.py
 │   ├── test_pipeline.py
 │   └── test_storage.py
@@ -127,8 +135,3 @@ PKM AI/
 └── .vscode/
     └── settings.json
 ```
-
-## What’s Next
-1. Hook an actual LLM backend into the Streamlit chat (OpenAI, Ollama, HF) and expose FastAPI endpoints.
-2. Build export/highlighting features so answers cite the exact snippets.
-3. Add authentication if the PKM workspace needs to be shared.

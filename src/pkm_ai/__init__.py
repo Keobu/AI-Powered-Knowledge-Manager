@@ -12,6 +12,13 @@ from .embeddings import (
     build_vector_store,
     create_embeddings,
 )
+from .export import (
+    ExportError,
+    SummarySection,
+    export_context_to_json,
+    export_summary_to_markdown,
+    export_summary_to_pdf,
+)
 from .ingestion import Document, DocumentLoaderError, load_document, split_text
 from .pipeline import DocumentIngestionPipeline, IngestionResult
 from .storage import (
@@ -52,4 +59,9 @@ __all__ = [
     "RetrievedChunk",
     "AppState",
     "UploadedDocument",
+    "export_summary_to_markdown",
+    "export_summary_to_pdf",
+    "export_context_to_json",
+    "SummarySection",
+    "ExportError",
 ]
