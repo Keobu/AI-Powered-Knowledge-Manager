@@ -5,9 +5,9 @@ Welcome to **PKM AI**, the personal knowledge sidekick that helps you tame PDFs,
 ## Sneak Peek
 Here’s a glimpse of the desktop app powered by CustomTkinter:
 
-![Dashboard](docs/assets/dashboard.png)
-![Search & Chat](docs/assets/search_chat.png)
-![Settings](docs/assets/settings.png)
+![Dashboard](docs/assets/PK%201.png)
+![Search & Chat](docs/assets/PK2.png)
+![Settings](docs/assets/PK3.png)
 
 ## What You Get
 - **Document ingestion** for PDF/TXT/MD with automatic chunking and metadata tracking.
