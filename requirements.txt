@@ -4,6 +4,7 @@ sentence-transformers
 transformers
 faiss-cpu
 chromadb
+numpy
 pytest
 pypdf
 python-dotenv

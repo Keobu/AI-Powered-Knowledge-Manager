@@ -1,5 +1,6 @@
 """PKM AI core package."""
 
+from .app_state import AppState, UploadedDocument
 from .chat import ChatEngine, ChatError, ChatResponse, RetrievedChunk
 from .embeddings import (
     BaseVectorStore,
@@ -49,4 +50,6 @@ __all__ = [
     "ChatError",
     "ChatResponse",
     "RetrievedChunk",
+    "AppState",
+    "UploadedDocument",
 ]

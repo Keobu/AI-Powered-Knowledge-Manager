@@ -6,8 +6,8 @@ PKM AI is my personal knowledge hub powered by AI. Drop in PDFs, notes, or markd
 - ✅ Phase 1 – Project scaffolding (src/tests/docs, dependencies, tooling)
 - ✅ Phase 2 – Document ingestion (`load_document`, `split_text`, pytest coverage)
 - ✅ Phase 3 – Embeddings, vector stores, and metadata pipeline (SentenceTransformers, FAISS/Chroma wrappers, persistence tests)
-- ☐ Phase 4 – AI chat layer
-- ☐ Phase 5 – Streamlit dashboard
+- ✅ Phase 4 – Retrieval-augmented chat (LLM hooks, prompts, coherence tests)
+- ✅ Phase 5 – Streamlit dashboard (upload/ingest, document list, semantic search, chat pane)
 - ☐ Phase 6 – Bonus polish (exports, highlights, auth)
 
 ## What PKM AI Tries To Do
@@ -22,6 +22,12 @@ PKM AI is my personal knowledge hub powered by AI. Drop in PDFs, notes, or markd
 1. Spin up a Python ≥3.10 virtual environment and activate it.
 2. Install dependencies: `pip install -r requirements.txt`.
 3. (Optional, recommended) install the package locally so imports just work: `pip install -e .`.
+
+### Launch the Dashboard
+```bash
+streamlit run src/pkm_ai/streamlit_app.py
+```
+By default the app stores SQLite metadata under `./data/metadata.db`. Override via `STREAMLIT_SECRETS` entry `DATA_DIR` if you want another path.
 
 ## Running Tests
 - Full suite: `pytest`
@@ -41,38 +47,53 @@ PKM AI is my personal knowledge hub powered by AI. Drop in PDFs, notes, or markd
 ### Metadata Persistence
 - `pkm_ai.storage.SQLiteMetadataStore` is the durable option with constraints, indexes, and upserts.
 - `pkm_ai.storage.JSONMetadataStore` is a lightweight alternative for quick experiments.
-- Each exposes `upsert_document`, `replace_document_chunks`, `list_document_chunks` so you can swap backends without rewiring.
+- Each exposes `upsert_document`, `replace_document_chunks`, `list_document_chunks`, `get_chunk` so you can swap backends without rewiring.
 - See `tests/test_storage.py` for scenarios.
 
 ### Ingestion Pipeline
 - `pkm_ai.pipeline.DocumentIngestionPipeline` threads ingestion, metadata, embeddings, and vector indexing together.
+- Stores chunk text alongside metadata so downstream retrieval can respond without extra lookups.
 - Returns `IngestionResult` with the stored document plus the chunk records that made it into the vector DB.
 - Exercised end-to-end in `tests/test_pipeline.py` via a stub embedder/vector store.
 
+### Retrieval-Augmented Chat
+- `pkm_ai.chat.ChatEngine` wraps similarity search, prompt building, and LLM calls.
+- Works with any callable LLM, or spin up a HuggingFace `transformers` pipeline by passing `huggingface_model="sentence-transformers/all-mpnet-base-v2"` (for example).
+- Prompts instruct the assistant to stick to the retrieved context; missing answers trigger an "I do not know" response.
+- Tests (`tests/test_chat.py`) verify prompt assembly, metadata fallbacks, and error handling.
+
+### Streamlit Dashboard
+- `src/pkm_ai/streamlit_app.py` bootstraps metadata, vector store, ingestion pipeline, and chat engine.
+- Sidebar supports multi-file upload with automatic ingestion; feedback surfaces chunk counts per document.
+- Main content splits into document list (preview first chunks), semantic search results, and a chat transcript with expandable context snippets.
+- Under the hood the dashboard shares a session-level `AppState` (`src/pkm_ai/app_state.py`) so uploads, searches, and chats stay in sync. Tested in `tests/test_app_state.py`.
+
 ### Tiny Quickstart
 ```python
-from pkm_ai import DocumentIngestionPipeline, SQLiteMetadataStore, build_vector_store
+from pkm_ai import (
+    AppState,
+    ChatEngine,
+    DocumentIngestionPipeline,
+    SQLiteMetadataStore,
+    build_vector_store,
+)
 
 metadata_store = SQLiteMetadataStore("./data/metadata.db")
 vector_store = build_vector_store("faiss", dim=384)  # match the embedding model dimension
 
 pipeline = DocumentIngestionPipeline(metadata_store, vector_store)
-result = pipeline.ingest_file("./docs/meeting-notes.md")
-print(result.document)
-print(len(result.chunks), "chunks indexed")
+chat = ChatEngine(
+    vector_store,
+    metadata_store=metadata_store,
+    llm=lambda prompt: "This is where the LLM answer would go.",
+)
+
+state = AppState(metadata_store=metadata_store, ingestion_pipeline=pipeline, chat_engine=chat)
+state.ingest_file("./docs/meeting-notes.md")
+print(state.chat("What were the action items?").answer)
 ```
 
 ## Roadmap
-### Phase 4 – AI Chat (next up)
-- Plug in an LLM (OpenAI API, Ollama, or HuggingFace).
-- Shape retrieval-augmented prompts anchored to stored chunks.
-- Add regression tests for answer grounding and hallucination checks.
-
-### Phase 5 – Streamlit Dashboard
-- Drag-and-drop uploads with automatic ingestion.
-- Document browser with previews and semantic search.
-- Conversational panel powered by the retrieval+LLM stack.
-
 ### Phase 6 – Nice-to-haves
 - Export polished summaries (PDF/Markdown).
 - Highlight the source snippets in each answer.
@@ -87,12 +108,17 @@ PKM AI/
 ├── src/
 │   └── pkm_ai/
 │       ├── __init__.py
+│       ├── app_state.py
+│       ├── chat.py
 │       ├── embeddings.py
 │       ├── ingestion.py
 │       ├── pipeline.py
-│       └── storage.py
+│       ├── storage.py
+│       └── streamlit_app.py
 ├── tests/
 │   ├── conftest.py
+│   ├── test_app_state.py
+│   ├── test_chat.py
 │   ├── test_embeddings.py
 │   ├── test_ingestion.py
 │   ├── test_pipeline.py
@@ -103,6 +129,6 @@ PKM AI/
 ```
 
 ## What’s Next
-1. Flesh out retrieval queries so the LLM receives curated context for every question.
-2. Wire in the preferred LLM provider and expose a FastAPI endpoint for chat.
-3. Layer on the Streamlit experience so the workflow feels as friendly as the README.
+1. Hook an actual LLM backend into the Streamlit chat (OpenAI, Ollama, HF) and expose FastAPI endpoints.
+2. Build export/highlighting features so answers cite the exact snippets.
+3. Add authentication if the PKM workspace needs to be shared.
